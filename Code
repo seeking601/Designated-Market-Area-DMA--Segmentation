@@ -1,0 +1,154 @@
+
+setwd("/Users/wangst/Desktop/DMA Data")
+library(readxl)
+#library(xlsx)
+#install.packages("xlsx")
+#install.packages("readxl")
+DMA = read_excel("New DMA Clusters_Data.xlsx", col_names = T)
+#View(DMA)
+dim(DMA) #231 825
+
+#----------------K-means clustering-------------------------------
+#--------------------the scree plot----------------------------
+set.seed(100)
+withinSS = numeric(15)
+for (i in 1:15){
+  temp.kmeans = kmeans(DMA[, -1], i)
+  withinSS[i] = temp.kmeans$tot.withinss
+  
+}
+
+plot(withinSS, ylab = "Total within-Cluster sum of squares",
+     xlab = "Number of Clusters")
+
+#----------------------------Hierarchical clustering----------------------
+#install.packages("bayesm")
+library(bayesm)
+
+distances = dist(DMA[, -1], method = "euclidean")
+DMA.clust = hclust(distances, method = "ward.D")
+plot(DMA.clust) #5 is a reasonable choice??
+
+#cut the dendrogram to get 5 clusters
+clustergroups = cutree(DMA.clust, k = 12)
+table(clustergroups) #50 61 58 28 34 
+#clustergroups
+#1   2  3  4  5  6  7  8  9 10 11 12 
+#40 13 29 15 33 10 29 20 24 10  1  7 
+
+
+#create a df for each cluster
+n = 12
+for (i in 1:n){
+  assign(paste0("HierCluster",i), subset(DMA, clustergroups == i))
+}
+
+#export each cluster
+for (i in 1:n){
+  write.csv(subset(DMA, clustergroups == i ), file = paste0("Cluster", i, ".csv"))
+
+}
+
+#export 12 cluster dfs to 1 csv, 12 sheets
+
+for (i in 1:n){
+  write.csv(subset(DMA, clustergroups == i ), file = "test2.csv", 
+            sheet = paste0("Cluster", i))
+  
+}
+
+
+#rank movie indexes within each cluster
+for (i in 1:n){
+  assign(paste0("c", i), sort(colMeans(subset(DMA, clustergroups == i)[-1]), decreasing = T))
+  
+}
+
+#sort(colMeans(subset(DMA, clustergroups == 1)[-1]), decreasing = T)
+
+for (i in 1:n){
+  write.csv(sort(colMeans(subset(DMA, clustergroups == i)[-1]), decreasing = T), 
+            file = paste0("c", i, ".csv"))
+  
+}
+
+
+c1 = sort(colMeans(HierCluster1[-1]), decreasing = T)
+#c1[1:10]
+c2 = sort(colMeans(HierCluster2[-1]), decreasing = T)
+class(c1)
+c1[1]
+dim(c1)
+c2
+
+df = data.frame(c1, c2)
+
+write.csv(c1, file = "test1.csv")
+write.csv(c2, file = "test2.csv")
+
+
+
+#HierCluster1[,1]
+#View(HierCluster12)
+
+tail(sort(colMeans(HierCluster1[-1])))
+#top 5 indexes: drama
+#DO YOU BELIEVE? 2.614622 
+#WOODLAWN 2.684260 
+#GOD'S NOT DEAD 2 2.694395 
+#I CAN ONLY IMAGINE 2.733798 
+#GOD'S NOT DEAD: A LIGHT IN DARKNESS 2.860053 
+#GOD'S NOT DEAD 2.988957 
+
+HierCluster2 = subset(DMA, clustergroups == 2)
+tail(sort(colMeans(HierCluster2[-1])))
+
+#drama/biographical/adventure/documentary/mystery, crime/history
+#THE ZOOKEEPER'S WIFE               SUPER TROOPERS 2 
+#        1.497263                       1.510938 
+#BEARS                          HOSTILES 
+#1.528077                       1.545796 
+#THE BEST EXOTIC MARIGOLD HOTEL                 ONLY THE BRAVE 
+#1.557042                                           1.622917 
+
+HierCluster3 = subset(DMA, clustergroups == 3)
+tail(sort(colMeans(HierCluster3[-1])))
+
+#drama,sport/musical/
+#GOD'S NOT DEAD: A LIGHT IN DARKNESS 1.799667 
+#FOREVER MY GIRL 1.838807 
+#THE CHOICE 1.846541 
+#GOD'S NOT DEAD 1.851459 
+#I CAN ONLY IMAGINE 1.898138 
+#THE MIRACLE SEASON 1.966743
+
+
+HierCluster4 = subset(DMA, clustergroups == 4)
+tail(sort(colMeans(HierCluster4[-1])))
+
+#romance, comedy/action, comedy/comedy/adventure, comedy/drama,crime
+#comedy
+#AMERICAN REUNION             SPRING BREAKERS 
+#2.247682                         2.251485 
+#THE WILD LIFE                  WANDERLUST 
+#2.347080                        2.367157 
+#KEEPING UP WITH THE JONESES         THAT AWKWARD MOMENT 
+#2.488681                              3.133799 
+
+
+HierCluster5 = subset(DMA, clustergroups == 5)
+tail(sort(colMeans(HierCluster5[-1])))
+
+
+#drama comedy
+#TYLER PERRY'S ACRIMONY 3.483351 
+#TYLER PERRY'S MADEA'S WITNESS PROTECTION 3.516658 
+#TYLER PERRY'S BOO! A MADEA HALLOWEEN 3.785855 
+#TYLER PERRY'S BOO 2! A MADEA HALLOWEEN 3.942156 
+#TYLER PERRY'S A MADEA CHRISTMAS 4.032894 
+#WOODLAWN 4.358010 
+
+DMA[c(1:3), c(1:4)]
+
+
+
